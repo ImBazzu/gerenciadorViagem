@@ -1,0 +1,41 @@
+services:
+
+    mysql:
+        image: mysql:8
+        environment:
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_DATABASE: secretaria_transporte
+        volumes:
+            - mysql_data:/var/lib/mysql
+            - ./mysql-init:/docker-entrypoint-initdb.d
+        networks:
+            - app-network # Adiciona o MySQL à mesma rede dos outros serviços
+    backend:
+        build: ./backend
+        env_file:
+            - .env.prod
+        depends_on:
+            - mysql # Garante que o MySQL seja iniciado antes do backend
+        ports:
+            - "8080:8080"
+        networks:
+            - app-network
+
+    frontend:
+        build:
+            context: ./frontend
+            args:
+                VITE_BACKEND_URL: http://backend:8080
+        ports:
+            - "80:80"
+        depends_on:
+            - backend
+        networks:
+            - app-network
+volumes:
+    mysql_data:
+
+
+networks:
+    app-network:
+        driver: bridge
